@@ -1,0 +1,10 @@
+<!--?xml version="1.0" encoding="utf-8"? -->
+<launch>
+  <arg name="respawn" default="false"/>
+  <arg name="ns" default="/bl"/>
+  <group ns="$(arg ns)">
+
+    <node pkg="balance_fio" name="balance_fio" type="balance_fio" output="screen" >
+    </node>
+  </group>
+</launch>
