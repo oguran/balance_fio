@@ -9,6 +9,8 @@
 
 #include "balance_fio/balance_fio.h"
 
+#define TOPIC_CMD "/bl/balance_cmd"
+#define TOPIC_ODM "/bl/balance_odm"
 
 
 BalanceFIO::BalanceFIO()
@@ -22,9 +24,10 @@ BalanceFIO::~BalanceFIO()
 
 int BalanceFIO::Init()
 {
-	int ret = -1;
-	ret |= mkfifo(BALANCE_CMD_PATH, 0666);
+	int ret = mkfifo(BALANCE_CMD_PATH, 0666);
+	printf("BalanceFIO::Init ret=%d\n", ret);
 	ret |= mkfifo(BALANCE_ODM_PATH, 0666);
+	printf("BalanceFIO::Init ret=%d\n", ret);
     return ret;
 
 }
@@ -34,10 +37,10 @@ void BalanceFIO::Start()
   ros::NodeHandle nh;
 //from UI postion cmd
   ui_sub = nh.subscribe(
-              "/bl/balance_cmd", 1,
+              TOPIC_CMD, 1,
               &BalanceFIO::CmdCallback, this);
 //To UI
-  pub_odm = nh.advertise<balance_msg::BalanceOdm>("balance_odm", 1);
+  pub_odm = nh.advertise<balance_msg::BalanceOdm>(TOPIC_ODM, 1);
 
 }
 
@@ -67,12 +70,14 @@ void BalanceFIO::CmdCallback(const balance_msg::BalanceCmd& cmd)
 
 int BalanceFIO::WriteBlanceCmd(BALANCE_CMD_t *balance_cmd_out)
 {
+  printf("open %s\n", BALANCE_CMD_PATH);
   balance_cmd_fd = open(BALANCE_CMD_PATH, O_WRONLY);
   if (balance_cmd_fd == -1) {
     printf("--- BLFIO:WriteBlanceCmd --- file open error: %s \n", BALANCE_CMD_PATH);
     return BL_STATUS_ERR;
   }
 
+  printf("write %s\n", BALANCE_CMD_PATH);
   write(balance_cmd_fd, balance_cmd_out, sizeof(BALANCE_CMD_t));
   close(balance_cmd_fd);
 
@@ -81,14 +86,16 @@ int BalanceFIO::WriteBlanceCmd(BALANCE_CMD_t *balance_cmd_out)
 
 int BalanceFIO::ReadBlanceOdm(BALANCE_ODM_t *balance_odm_in)
 {
-  int balance_odm_fd = open(BALANCE_ODM_PATH, O_RDONLY);
+  printf("open %s\n", BALANCE_ODM_PATH);
+  int balance_odm_fd = open(BALANCE_ODM_PATH, O_RDONLY/* | O_NONBLOCK*/);
   if (balance_odm_fd == -1) {
     printf("--- BLFIO:ReadBlanceOdm --- file open error: %s \n", BALANCE_ODM_PATH);
     return BL_STATUS_ERR;
   }
-  read(balance_odm_fd, balance_odm_in, sizeof(BALANCE_ODM_t));
+  printf("read %s\n", BALANCE_ODM_PATH);
+  size_t size = read(balance_odm_fd, balance_odm_in, sizeof(BALANCE_ODM_t));
   close(balance_odm_fd);
-  return BL_STATUS_OK;
+  return size > 0 ? BL_STATUS_OK : BL_STATUS_ERR;
 }
 
 void BalanceFIO::Odometry()
@@ -98,7 +105,7 @@ void BalanceFIO::Odometry()
 
   ret = ReadBlanceOdm(&odm_in);
   if (BL_STATUS_OK != ret) {
-    printf("--- BLFIO:Odometry 0: --- data error: \n");
+    // printf("--- BLFIO:Odometry 0: --- data error: \n");
     return;
   }
 
@@ -129,6 +136,7 @@ void BalanceFIO::Odometry()
   odm_msg.right_speed = odm_in.right_speed;
 
   pub_odm.publish(odm_msg);
+  printf("%s publish\r", TOPIC_ODM);
 
 }
 
