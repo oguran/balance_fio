@@ -18,12 +18,15 @@ main(int argc, char **argv)
 
     if (0 == bl_fio.Init()) {
       bl_fio.Start();
+      ros::AsyncSpinner aspinner(1);
+      aspinner.start();
       ros::Rate rate(20); //adjust frq
       while (ros::ok()) {
-        ros::spinOnce();
+        // ros::spinOnce();
         bl_fio.Odometry();
         rate.sleep();
       }
+      aspinner.stop();
       bl_fio.Stop();
     }
 
