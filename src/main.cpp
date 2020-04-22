@@ -20,7 +20,7 @@ main(int argc, char **argv)
       bl_fio.Start();
       ros::AsyncSpinner aspinner(1);
       aspinner.start();
-      ros::Rate rate(20); //adjust frq
+      ros::Rate rate(60); //adjust frq
       while (ros::ok()) {
         // ros::spinOnce();
         bl_fio.Odometry();
