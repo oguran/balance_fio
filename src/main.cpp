@@ -20,10 +20,19 @@ main(int argc, char **argv)
       bl_fio.Start();
       ros::AsyncSpinner aspinner(1);
       aspinner.start();
-      ros::Rate rate(60); //adjust frq
+      ros::Rate rate(100); //adjust frq
+      // ros::Time t0 = ros::Time::now();
+      // int cnt = 0;
       while (ros::ok()) {
-        // ros::spinOnce();
         bl_fio.Odometry();
+        // cnt++;
+        // ros::Time t1 = ros::Time::now();
+        // ros::Duration duration = t1 - t0;
+        // if ((duration) >= ros::Duration(1.0)) {
+        //   printf("%f Hz (%d/%f)\n", (cnt / duration.toSec()), cnt, duration.toSec());
+        //   t0 = t1;
+        //   cnt = 0;
+        // }
         rate.sleep();
       }
       aspinner.stop();
